@@ -57,6 +57,7 @@ class ScanWidget(QMainWindow):
     self.initVars()
     self.initUI()
     self.setUpImage()
+    print("Hi mom!")
 
   def initVars(self):
     self.testing = False
