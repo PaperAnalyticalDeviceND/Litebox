@@ -24,8 +24,19 @@ def FindContours(img):
   blurred = cv2.blur(img, (2,2))
   edges = cv2.Canny(blurred, 40, 150)
   img2, contours, hierarchy = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+  img2 = cv2.cvtColor(img2, cv2.COLOR_GRAY2RGB)
+  #img, fiducials = findFiducials(contours, hierarchy, img2)
+  #return img, fiducials
   fiducials = findFiducials(contours, hierarchy)
   return img, fiducials
+
+def compareFiducials(fiducials, oldFiducials):
+  newFiducials = []
+  if len(fiducials) < len(oldFiducials):
+    newFiducials = oldFiducials
+  else:
+    newFiducials = fiducials
+  return newFiducials
 
 def sortFiducials(fiducials, oldFiducials):
   quadrants = [[],[],[],[]]
@@ -54,8 +65,7 @@ def sortFiducials(fiducials, oldFiducials):
     else:
       print("Failed")
       fiducials = []
-  if len(fiducials) < len(oldFiducials):
-    fiducials = oldFiducials
+  fiducials = compareFiducials(fiducials, oldFiducials)
   return fiducials
 
 def assign(point, centerX, centerY, quadrants):
@@ -147,6 +157,7 @@ def findFiducials(contours, hierarchy):
   fiducials = []
   Markers = selectMarkers(contours, hierarchy)
   for mark in Markers:
+    #cv2.drawContours(img, contours, mark, (0,255,0), 1)
     x, y, w, h = cv2.boundingRect(contours[mark])
     x = x+int(w/2)
     y = y+int(h/2)
@@ -155,7 +166,8 @@ def findFiducials(contours, hierarchy):
         break
     else:
       diameter = min(w,h)
-      if diameter > minDiameter:
+      sqrtArea = cv2.contourArea(contours[mark])**.5
+      if diameter > minDiameter and sqrtArea > (.85 * diameter):
         fiducials.append([x, y, diameter, -1])
   return fiducials
 
@@ -169,7 +181,8 @@ def selectMarkers(contours, hierarchy):
       depth += 1
     if hierarchy[0][contour][2] != -1:
       depth += 1
-    if depth >= 5:
+    if depth >= 3:
+    #if depth >= 5:
       Markers.append(contour)
   return Markers
 
@@ -199,7 +212,6 @@ def getError(fiducials, transformation):
   for i in range(2):
     if fiducials[4+i][0]>0:
       check, trueChecks = getCheck(fiducials, transformation, 4+i)
-      print(check.shape, trueChecks.shape)
       for j in range(1):
         dist = check[:, j]-trueChecks[i]
         dist = dist**2
@@ -230,8 +242,8 @@ def getQR(img):
 
 def findWax(img):
   img2 = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-  template = cv2.imread("/home/pi/Documents/Template2.png", 0)
-  #template = cv2.imread("template.png", 0)
+  #template = cv2.imread("/home/pi/Documents/Template2.png", 0)
+  template = cv2.imread("Template2.png", 0)
   match = cv2.matchTemplate(img2, template, cv2.TM_CCOEFF_NORMED)
   cv2.normalize(match, match, 0, 255, cv2.NORM_MINMAX)
   cv2.imwrite("./prematch.png", img2)
@@ -291,8 +303,8 @@ def getCorners(point):
   return [(point[0]-(lanesWidth/2), point[1]), (point[0]+(lanesWidth/2), point[1])]
 
 if __name__ == '__main__':
-  processed = cv2.imread('./processed.jpg', 1)
-  processed = correctComb(processed)
+  raw = cv2.imread('./raw.jpg', 1)
+  processed, resized = ProcessImage(raw)
   cv2.imshow('Corrected', processed)
   cv2.waitKey(0)
   cv2.destroyAllWindows()
