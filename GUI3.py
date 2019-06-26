@@ -61,6 +61,7 @@ class ScanWidget(QMainWindow):
     super(QMainWindow, self).__init__()
     self.initVars()
     self.initUI()
+    self.setDefaults()
     self.setUpImage()
 
   def initVars(self):
@@ -72,6 +73,8 @@ class ScanWidget(QMainWindow):
     self.foundYeast = False
     self.manualFoundYeast = False
     self.prefix = ""
+
+  def setDefaults(self):
     self.test = default_test
     self.drug = default_sample
     self.category = default_category
