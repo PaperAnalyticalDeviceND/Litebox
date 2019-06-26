@@ -17,7 +17,7 @@ default_category = 'General'
 #default_sample = 'Amoxicillin'
 default_sample = 'Alum (Granules)'
 name = "Herb scanner"
-version = 1.0
+version = 1.1
 nameAndVersion = "%s-v%.2f" % ( name, version )
 
 def CenterWindow(widget, screenX, screenY, percent):
