@@ -246,8 +246,8 @@ def findWax(img):
   #template = cv2.imread("Template2.png", 0)
   match = cv2.matchTemplate(img2, template, cv2.TM_CCOEFF_NORMED)
   cv2.normalize(match, match, 0, 255, cv2.NORM_MINMAX)
-  cv2.imwrite("./prematch.png", img2)
-  cv2.imwrite("./match.png", match)
+  #cv2.imwrite("./prematch.png", img2)
+  #cv2.imwrite("./match.png", match)
   allowedPositions = np.ones((match.shape[0], match.shape[1]), dtype=np.uint8)
   maxConfidence = 255
   threshold = 200
