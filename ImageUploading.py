@@ -8,6 +8,10 @@ API_KEY = "06Q9CLAC8D69ECGB80AL"
 known_dict = {
 'categories': ['Chris Test', 'General', '2016 PAD VALIDATION', '2017 Laos preparation', '2015-2016 USAID DIV project'], 'samples': ['Acetaminophen', 'Acetylsalicylic Acid', 'Amodiaquine', 'Amoxicillin', 'Ampicillin', 'Artesunate', 'Azithromycin', 'Borate', 'Calcium Carbonate', 'Calcium Sulfate', 'Chloramphenicol', 'Chloroquine', 'Ciprofloxacin', 'Corn Starch', 'DI water', 'Diethylcarbamazine', 'Dihydoartemisinin', 'Doxycycline', 'Dried Wheat Starch', 'Erythromycin', 'Ethambutol', 'Furosemide', 'Isoniazid', 'Levofloxacin', 'Lumefantrine', 'Metformin', 'Oseltamivir', 'Penicillin G', 'Polyethylene Glycol', 'Potato Starch', 'Primaquine', 'Pyrazinamide', 'Quinine', 'Quinine Sulfate', 'Rifampicin', 'Streptomycin', 'Sulfadoxine', 'Talc', 'Tetracycline', 'Tryptophan', 'epinephrine', 'MgSO4', 'mebendazole', 'albendazole', 'glucose', 'caffeine', 'Dapsone', 'Artemether', 'Ceftriaxone injectable', 'Ceftriaxone', 'Cefuroxime', 'Cephalexin', 'Tap water', 'Enalapril', 'Losartan', 'Amoxycillin clavulonic acid', 'Sweet Rice', 'Lake Water', 'RHZE', 'NaH2PO4', 'Na2HPO4', 'K3PO4', 'K2HPO4', 'KH2PO4', 'Na3PO4', 'Kenya Amoxycillin Dosage Forms', 'amoxyclav', 'Clavulanate, lithium salt (USP standard)', 'Cefuroxime Axetil', 'Amoxicillin rerun', 'Pyrazinamide rerun', 'EthIso', 'Rifiso', 'Unknown', 'Sildenafil', 'Chlorpheniramine Maleate', 'Bad Amoxicillin', 'Amoxicillin Kenya Companies', 'Amoxyclav Kenya Companies', 'Dihydroartimisinin Piperaquine Dosage Form', 'Sulfamethoxazole Trimethoprim Dosage Form', 'hydralazine hydrochloride', 'hydrochlorothiazid', 'ofloxacin API', 'ofloxacin dosage form', 'pyrimethamine', 'trimethoprim', 'sulfanilamide', 'sulfamethoxazole', 'Cocaine', 'Methamphetamine', 'Heroin', 'Water', 'Lactose', 'Tramadol', 'Dimethylsulfone', 'Fentanyl Mix', 'Crack Cocaine', 'Aderall', 'Cocaine HCl', 'DEC', 'Indole', 'Lidocaine', 'Benzocaine', 'Procaine', 'Butane Honey Oil', 'MDMA', 'Dimethyl Sulfone', 'Chloral Hydrate', 'Diazapam', 'Peyote Cactus', 'NQS'], 'tests': ['Acidic Cobalt Thiocyanate', 'Aspirin Test', 'Basic Cobalt Thiocyanate', 'Beta-lactam (Cu)', 'Biuret', 'Carbonate', 'Dimethylcinnamonaldehyde (DMCA)', 'Eosine Red', 'Eriochrome Black T K2CO3', 'Eriochrome Black T NaOH', 'Ethambutol (Cu)', 'Hemin', 'Iron (III) Chloride-Carbonate Test', 'Magic SNP', 'Naphthaquinone Sulfonate (NQS)', 'Ninhydrin', 'Nirophenols-HONO', 'Phenols-HONO and PNA', 'Pyridyl Pyridinium Chloride (PPC)', 'Rimani Test', 'Sodium Nitroprusside (SNP)', 'Timer', 'Triiodide Povidone', 'Turmeric', '12 Lane PAD Kenya 2014', 'SaltPAD', 'amPAD_Early', 'amPAD_Late', 'Sandipan1', '12LanePADKenya2015', 'dropbox', 'Lane G (SNP) for Clav standards', 'HPLC Comparison', '2017 Laos Antibiotic PAD', 'idPAD']}
 
+def getBriefData(category):
+  known_values = known_dict[category]
+  ret = list(known_values)
+  return ret
 
 def getData(category):
   url = "https://pad.crc.nd.edu/index.php"
@@ -35,6 +39,7 @@ def getData(category):
   return ret
 
 def postData(file1, file2, sample, test, category, idnum):
+  print("Posting...")
   f = open(file1, "r")
   data = f.read()
   f2 = open(file2, "r")
@@ -54,7 +59,7 @@ def postData(file1, file2, sample, test, category, idnum):
     "category_name": category,
     "camera1": "RaspberryPi",
     "notes": "testing",
-    "file_name": "processed.png",
+    "file_name": "raw.png",
     "file_name2": "processed.png",
     "sampleid": idnum,
     "uploaded_file": encodeData,
@@ -62,6 +67,7 @@ def postData(file1, file2, sample, test, category, idnum):
   }
   response = requests.post(url, values)
   ret = response.json()
+  print("Done posting")
   return json.dumps(ret['status']) == '"ok"'
 
 def getPred(idnum):
@@ -81,7 +87,7 @@ def getPred(idnum):
   print(json.dumps(ret))
 
 
-def uploadFormatedDir(directory, src="/Temp/", dst="/PAD/"):
+def uploadFormatedDir(directory, src="/PAD_Data/", dst="/Uploaded_PADs/"):
   rootDirectory = os.path.dirname(directory)
   tempDirectory = rootDirectory + src
   padDirectory = rootDirectory + dst
@@ -128,4 +134,4 @@ def writeMetadata(directory, data):
 
 
 if __name__ == '__main__':
-  uploadFormatedDir('./')
+  print(getData('samples'))

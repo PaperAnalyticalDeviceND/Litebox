@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QPushButton, QLabel, QAction, QMenuBar, QActionGroup, QMenu
+from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QPushButton, QLabel, QAction, QMenuBar, QActionGroup, QMenu, QDialog
 from PyQt5.QtCore import QTimer, QRectF, QPoint, QSize
 from PyQt5.QtGui import QColor, QPainter, QImage, QFont
 '''
@@ -7,13 +7,15 @@ from PyQt5.QtCore import QObject, Qt, pyqtSignal, QRectF, QPoint, QTimer, pyqtSl
 from PyQt5.QtGui import QPainter, QFont, QColor, QPen, QImage, QIcon'''
 import sys
 import ImageSource, ImageProcessing, FileHandler
+from CategoryGUI import Ui_Dialog as Form
 import platform
 import numpy as np
 
 border_size = 20.0
 default_test = '12LanePADKenya2015'
 default_category = 'General'
-default_sample = 'Amoxicillin'
+#default_sample = 'Amoxicillin'
+default_sample = 'Alum (Granules)'
 
 def CenterWindow(widget, screenX, screenY, percent):
   width = percent*screenX
@@ -57,7 +59,6 @@ class ScanWidget(QMainWindow):
     self.initVars()
     self.initUI()
     self.setUpImage()
-    print("Hi mom!")
 
   def initVars(self):
     self.testing = False
@@ -74,18 +75,9 @@ class ScanWidget(QMainWindow):
 
   def getData(self):
     data = {}
-    if self.drugMenu.checkedAction() is None:
-      data['sample_name'] = default_sample
-    else:
-      data['sample_name'] = self.drugMenu.checkedAction().text()
-    if self.testMenu.checkedAction() is None:
-      data['test_name'] = default_test
-    else:
-      data['test_name'] = self.testMenu.checkedAction().text()
-    if self.categoryMenu.checkedAction() is None:
-      data['category_name'] = default_category
-    else:
-      data['category_name'] = self.categoryMenu.checkedAction().text()
+    data['sample_name'] = self.drug
+    data['test_name'] = self.test
+    data['category_name'] = self.category
     data['uploaded'] = False
     return [data]
 
@@ -94,6 +86,7 @@ class ScanWidget(QMainWindow):
     if not self.yeast:
       data = self.getData()
       self.prefix = FileHandler.savePADImage(self.rawImage, self.finalImage, data, self.qr)
+      self.setUpSubMenus(self.reviewMenu)
     if self.yeast and self.foundYeast:
       FileHandler.saveYeastImage(self.finalImage)
     elif self.yeast and self.manualFoundYeast:
@@ -133,42 +126,65 @@ class ScanWidget(QMainWindow):
     self.setUpMenu()
     self.show()
 
-  def setDefaults(self, action):
-    parentMenu = action.parentWidget()
-    title = parentMenu.title()
-    if title == 'Select Test':
-      self.test = action.text()
-    if title == 'Select Drug':
-      self.drug = action.text()
-    if title == 'Select Category':
-      self.category = action.text()
-    print(self.test, self.drug, self.category)
-
   def unholyHack(self, action):
     parentMenu = action.parentWidget()
     grandParentMenu = parentMenu.parent()
+    instance = parentMenu.title()
+    sample = grandParentMenu.title()
     if action.text() == 'No prediction':
-      instance = parentMenu.title()
-      sample = grandParentMenu.title()
-      data = FileHandler.getMetaData(instance, sample)
-      data['sample_pred'] = 'Processing...'
-      FileHandler.saveMetaData(data, instance=instance, sample=sample)
-      parentMenu.clear()
-      self.buildMetaData(parentMenu, instance, sample)
+      #data = FileHandler.getMetaData(instance, sample)
+      #data['sample_pred'] = 'Processing...'
+      #FileHandler.saveMetaData(data, instance=instance, sample=sample)
       self.runNN(parentMenu, instance, sample)
+    elif action.text() == 'Not Uploaded':
+      FileHandler.uploadImage(instance, sample)
+    parentMenu.clear()
+    self.buildMetaData(parentMenu, instance, sample)
 
     #print(action.text(), parentMenu.title(), grandParentMenu.title())
 
+  def readDialog(self):
+    self.drug = self.form.drug_box.currentText()
+    self.category = self.form.category_box.currentText()
+    self.test = self.form.test_box.currentText()
+    print(self.drug, self.category, self.test)
+
+  def openDialog(self):
+    dialog = QDialog()
+    dialog.ui = Form()
+    dialog.ui.setupUi(dialog)
+    self.form = dialog.ui
+    self.setUpDialog()
+    dialog.accepted.connect(self.readDialog)
+    dialog.exec_()
+    dialog.show()
+
+  def setUpDialog(self):
+    available = FileHandler.getBriefData(defaults='Herbs')
+    self.form.drug_box.addItems(available['samples'])
+    index = self.form.drug_box.findText(self.drug)
+    self.form.drug_box.setCurrentIndex(index)
+    self.form.category_box.addItems(available['categories'])
+    index = self.form.category_box.findText(self.category)
+    self.form.category_box.setCurrentIndex(index)
+    self.form.test_box.addItems(available['tests'])
+    index = self.form.test_box.findText(self.test)
+    self.form.test_box.setCurrentIndex(index)
+
   def setUpMenu(self):
     mainmenu = self.menuBar()
-    menu = mainmenu.addMenu('Set Defaults')
-    self.testMenu = self.buildTestMenu(menu)
-    self.drugMenu = self.buildDrugMenu(menu)
-    self.categoryMenu = self.buildCategoryMenu(menu)
-    reviewMenu = mainmenu.addMenu('Review Samples')
-    self.setUpSubMenus(reviewMenu)
+    act = QAction('Set Defaults', mainmenu)
+    act.triggered.connect(self.openDialog)
+    mainmenu.addAction(act)
+    
+    #menu = mainmenu.addMenu('Set Defaults')
+    #menu.addAction(act)
+    self.reviewMenu = mainmenu.addMenu('Review Samples')
+    self.setUpSubMenus(self.reviewMenu)
+    mainmenu.adjustSize()
 
   def setUpSubMenus(self, menu):
+    menu.clear()
     samples = FileHandler.getSavedSamples()
     for sample in samples:
       sampleInstances = FileHandler.getSavedSampleInstances(sample)
@@ -216,45 +232,6 @@ class ScanWidget(QMainWindow):
     menu.addAction(act)
     act = actionGroup.addAction(QAction(uploadName, menu))
     menu.addAction(act)
-    return actionGroup
-
-  def buildTestMenu(self, menu):
-    setTest = menu.addMenu('Select Test')
-    tests = ['Acidic Cobalt Thiocyanate', 'Aspirin Test', 'Basic Cobalt Thiocyanate', 'Beta-lactam (Cu)', 'Biuret', 'Carbonate', 'Dimethylcinnamonaldehyde (DMCA)', 'Eosine Red', 'Eriochrome Black T K2CO3', 'Eriochrome Black T NaOH', 'Ethambutol (Cu)', 'Hemin', 'Iron (III) Chloride-Carbonate Test', 'Magic SNP', 'Naphthaquinone Sulfonate (NQS)', 'Ninhydrin', 'Nirophenols-HONO', 'Phenols-HONO and PNA', 'Pyridyl Pyridinium Chloride (PPC)', 'Rimani Test', 'Sodium Nitroprusside (SNP)', 'Timer', 'Triiodide Povidone', 'Turmeric', '12 Lane PAD Kenya 2014', 'SaltPAD', 'amPAD_Early', 'amPAD_Late', 'Sandipan1', '12LanePADKenya2015', 'dropbox', 'Lane G (SNP) for Clav standards', 'HPLC Comparison', '2017 Laos Antibiotic PAD', 'idPAD']
-    #tests = ImageUploading.getData("tests")
-    actionGroup = QActionGroup(setTest, exclusive=True)
-    for test in tests:
-      act = actionGroup.addAction(QAction(test, setTest, checkable=True))
-      setTest.addAction(act)
-      if(test == default_test):
-        act.toggle()
-    actionGroup.triggered.connect(self.setDefaults)
-    return actionGroup
-
-  def buildDrugMenu(self, menu):
-    setTest = menu.addMenu('Select Drug')
-    tests = ['Amoxicillin', 'Amoxicillin clavulonic acid', 'Ampicillin', 'Azithromycin', 'Benzyl Penicillin', 'Ceftriaxone', 'Chloroquine', 'Ciprofloxacin', 'Corn Starch', 'DI water', 'Doxycycline', 'Enalapril', 'Isoniazid', 'Losartan', 'Metformin', 'Paracetamol', 'Penicillin Procaine',  'Quinine', 'Tap water',   'Unknown']
-    #tests = ImageUploading.getData("tests")
-    actionGroup = QActionGroup(setTest, exclusive=True)
-    for test in tests:
-      act = actionGroup.addAction(QAction(test, setTest, checkable=True))
-      setTest.addAction(act)
-      if(test == default_test):
-        act.toggle()
-    actionGroup.triggered.connect(self.setDefaults)
-    return actionGroup
-
-  def buildCategoryMenu(self, menu):
-    setCat = menu.addMenu('Select Category')
-    #cats = ImageUploading.getData("categories")
-    cats = ['Chris Test', 'General', '2016 PAD VALIDATION', '2017 Laos preparation', '2015-2016 USAID DIV project']
-    actionGroup = QActionGroup(setCat, exclusive=True)
-    for cat in cats:
-      act = actionGroup.addAction(QAction(cat, setCat, checkable=True))
-      setCat.addAction(act)
-      if(cat == default_category):
-        act.toggle()
-    actionGroup.triggered.connect(self.setDefaults)
     return actionGroup
 
   def setupButton(self, button, program, x, y):
