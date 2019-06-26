@@ -14,10 +14,9 @@ import numpy as np
 border_size = 20.0
 default_test = '12LanePADKenya2015'
 default_category = 'General'
-#default_sample = 'Amoxicillin'
-default_sample = 'Alum (Granules)'
-name = "Herb scanner"
-version = 1.0
+default_sample = 'Amoxicillin'
+name = "PAD reader"
+version = 1.1
 nameAndVersion = "%s-v%.2f" % ( name, version )
 
 def CenterWindow(widget, screenX, screenY, percent):
@@ -163,7 +162,7 @@ class ScanWidget(QMainWindow):
     dialog.show()
 
   def setUpDialog(self):
-    available = FileHandler.getBriefData(defaults='Herbs')
+    available = FileHandler.getBriefData()
     self.form.drug_box.addItems(available['samples'])
     index = self.form.drug_box.findText(self.drug)
     self.form.drug_box.setCurrentIndex(index)
@@ -180,13 +179,11 @@ class ScanWidget(QMainWindow):
     act = QAction('Set Defaults', menu)
     act.triggered.connect(self.openDialog)
     menu.addAction(act)
-    box = QComboBox()
-    act2 = QWidgetAction(menu)
-    act2.setDefaultWidget(box)
-    box.addItems(['t1','t2'])
-    menu.addAction(act2)
-    #
-    #menu.addAction(act)
+    #box = QComboBox()
+    #act2 = QWidgetAction(menu)
+    #act2.setDefaultWidget(box)
+    #box.addItems(['t1','t2'])
+    #menu.addAction(act2)
     self.reviewMenu = mainmenu.addMenu('Review Samples')
     self.setUpSubMenus(self.reviewMenu)
     mainmenu.adjustSize()
