@@ -16,6 +16,9 @@ default_test = '12LanePADKenya2015'
 default_category = 'General'
 #default_sample = 'Amoxicillin'
 default_sample = 'Alum (Granules)'
+name = "Herb scanner"
+version = 1.0
+nameAndVersion = str.format("%s-v%.2f", name, version)
 
 def CenterWindow(widget, screenX, screenY, percent):
   width = percent*screenX
@@ -107,7 +110,7 @@ class ScanWidget(QMainWindow):
 
   def initUI(self):
     CenterWindow(self, 800, 480, 1.2)
-    self.setWindowTitle('PadScan')
+    self.setWindowTitle(nameAndVersion)
     self.IWidget =  ImageWidget(self)
     self.saveButton = QPushButton("Save image", self)
     self.setupButton(self.saveButton, self.saveImage, 10, 20)
