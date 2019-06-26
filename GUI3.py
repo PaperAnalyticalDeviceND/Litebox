@@ -163,7 +163,7 @@ class ScanWidget(QMainWindow):
 
   def setUpDialog(self):
     available = FileHandler.getBriefData()
-    self.form.drug_box.addItems(available['samples'])
+    self.form.drug_box.addItems(['Amoxicillin', 'Amoxicillin clavulonic acid', 'Ampicillin', 'Azithromycin', 'Benzyl Penicillin', 'Ceftriaxone', 'Chloroquine', 'Ciprofloxacin', 'Corn Starch', 'DI water', 'Doxycycline', 'Enalapril', 'Isoniazid', 'Losartan', 'Metformin', 'Paracetamol', 'Penicillin Procaine',  'Quinine', 'Tap water', 'Unknown'])
     index = self.form.drug_box.findText(self.drug)
     self.form.drug_box.setCurrentIndex(index)
     self.form.category_box.addItems(available['categories'])
