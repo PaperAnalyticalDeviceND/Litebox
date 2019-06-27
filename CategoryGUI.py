@@ -32,12 +32,6 @@ class Ui_Dialog(object):
         self.test_box = QtWidgets.QComboBox(self.verticalLayoutWidget)
         self.test_box.setObjectName("test_box")
         self.formLayout.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.test_box)
-        self.label = QtWidgets.QLabel(self.verticalLayoutWidget)
-        self.label.setObjectName("label")
-        self.formLayout.setWidget(2, QtWidgets.QFormLayout.LabelRole, self.label)
-        self.drug_box = QtWidgets.QComboBox(self.verticalLayoutWidget)
-        self.drug_box.setObjectName("drug_box")
-        self.formLayout.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.drug_box)
         self.verticalLayout.addLayout(self.formLayout)
         self.buttonBox = QtWidgets.QDialogButtonBox(self.verticalLayoutWidget)
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
@@ -55,5 +49,4 @@ class Ui_Dialog(object):
         Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
         self.label_3.setText(_translate("Dialog", "Current Category"))
         self.label_2.setText(_translate("Dialog", "Current Test"))
-        self.label.setText(_translate("Dialog", "Current Drug"))
 
