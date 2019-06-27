@@ -59,9 +59,9 @@ class ImageWidget(QWidget):
 class ScanWidget(QMainWindow):
   def __init__(self):
     super(QMainWindow, self).__init__()
+    self.setDefaults()
     self.initVars()
     self.initUI()
-    self.setDefaults()
     self.setUpImage()
 
   def initVars(self):
@@ -81,7 +81,7 @@ class ScanWidget(QMainWindow):
 
   def getData(self):
     data = {}
-    data['sample_name'] = self.drug
+    data['sample_name'] = self.drugBox.currentText()
     data['test_name'] = self.test
     data['category_name'] = self.category
     data['uploaded'] = False
@@ -125,6 +125,14 @@ class ScanWidget(QMainWindow):
     self.label.setStyleSheet("QLabel { color: white; }")
     self.label.adjustSize()
     self.label.setVisible(False)
+    self.drugBox = QComboBox(self)
+    available = FileHandler.getBriefData(defaults='Herbs')
+    self.drugBox.addItems(available['samples'])
+    index = self.drugBox.findText(self.drug)
+    self.drugBox.setCurrentIndex(index)
+    self.drugBox.setFont(QFont("Arial", 20))
+    self.drugBox.move(350, 20)
+    self.drugBox.resize(300,40)
     if self.yeast:
       self.takeButton = QPushButton("Take image", self)
       self.setupButton(self.takeButton, self.manualYeastImage, 400, 520)
@@ -150,7 +158,7 @@ class ScanWidget(QMainWindow):
     #print(action.text(), parentMenu.title(), grandParentMenu.title())
 
   def readDialog(self):
-    self.drug = self.form.drug_box.currentText()
+    self.drug = self.drugBox.currentText()
     self.category = self.form.category_box.currentText()
     self.test = self.form.test_box.currentText()
     print(self.drug, self.category, self.test)
@@ -167,9 +175,6 @@ class ScanWidget(QMainWindow):
 
   def setUpDialog(self):
     available = FileHandler.getBriefData(defaults='Herbs')
-    self.form.drug_box.addItems(available['samples'])
-    index = self.form.drug_box.findText(self.drug)
-    self.form.drug_box.setCurrentIndex(index)
     self.form.category_box.addItems(available['categories'])
     index = self.form.category_box.findText(self.category)
     self.form.category_box.setCurrentIndex(index)
@@ -183,13 +188,6 @@ class ScanWidget(QMainWindow):
     act = QAction('Set Defaults', menu)
     act.triggered.connect(self.openDialog)
     menu.addAction(act)
-    box = QComboBox()
-    act2 = QWidgetAction(menu)
-    act2.setDefaultWidget(box)
-    box.addItems(['t1','t2'])
-    menu.addAction(act2)
-    #
-    #menu.addAction(act)
     self.reviewMenu = mainmenu.addMenu('Review Samples')
     self.setUpSubMenus(self.reviewMenu)
     mainmenu.adjustSize()
