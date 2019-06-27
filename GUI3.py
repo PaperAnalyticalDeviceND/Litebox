@@ -16,7 +16,7 @@ default_test = '12LanePADKenya2015'
 default_category = 'General'
 default_sample = 'Amoxicillin'
 name = "PAD reader"
-version = 1.1
+version = 1.11
 nameAndVersion = "%s-v%.2f" % ( name, version )
 
 def CenterWindow(widget, screenX, screenY, percent):
@@ -125,7 +125,7 @@ class ScanWidget(QMainWindow):
     self.label.adjustSize()
     self.label.setVisible(False)
     self.drugBox = QComboBox(self)
-    available = FileHandler.getBriefData(defaults='Herbs')
+    available = FileHandler.getBriefData(defaults='PADTemp')
     self.drugBox.addItems(available['samples'])
     index = self.drugBox.findText(self.drug)
     self.drugBox.setCurrentIndex(index)
