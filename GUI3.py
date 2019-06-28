@@ -248,10 +248,14 @@ class ScanWidget(QMainWindow):
 
   def predictDrug(self):
     print("Getting prediction")
-    instance = self.review.listWidget_2.currentItem().text()
-    sample = self.review.listWidget.currentItem().text()
-    thread = NNThread(instance, sample, self.review, self.os, upload = False)
-    thread.start()
+    print(threading.active_count())
+    if threading.active_count() < 2:
+	instance = self.review.listWidget_2.currentItem().text()
+    	sample = self.review.listWidget.currentItem().text()
+    	thread = NNThread(instance, sample, self.review, self.os, upload = False)
+    	thread.start()
+    else:
+	self.review.pushButton.setText('Processor Busy')
 
   def uploadDrug(self):
     print("Uploading")
