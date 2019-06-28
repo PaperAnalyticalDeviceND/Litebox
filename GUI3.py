@@ -107,14 +107,6 @@ class ImageWidget(QWidget):
     qp.end()
 
 class ScanWidget(QMainWindow):
-  def runNN(self, parentMenu, instance, sample):
-    drug, percent = FileHandler.readImage(instance, sample, self.os)
-    data = FileHandler.getMetaData(instance, sample)
-    data['sample_pred'] = drug
-    FileHandler.saveMetaData(data, instance=instance, sample=sample)
-    parentMenu.clear()
-    self.buildMetaData(parentMenu, instance, sample)
-
   def __init__(self):
     super(QMainWindow, self).__init__()
     self.setDefaults()
@@ -248,10 +240,14 @@ class ScanWidget(QMainWindow):
 
   def predictDrug(self):
     print("Getting prediction")
-    instance = self.review.listWidget_2.currentItem().text()
-    sample = self.review.listWidget.currentItem().text()
-    thread = NNThread(instance, sample, self.review, self.os, upload = False)
-    thread.start()
+    print(threading.active_count())
+    if threading.active_count() < 2:
+      instance = self.review.listWidget_2.currentItem().text()
+      sample = self.review.listWidget.currentItem().text()
+      thread = NNThread(instance, sample, self.review, self.os, upload = False)
+      thread.start()
+    else:
+      self.review.pushButton.setText('Processor Busy')
 
   def uploadDrug(self):
     print("Uploading")
