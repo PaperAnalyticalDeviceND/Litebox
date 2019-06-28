@@ -40,6 +40,9 @@ def getSavedSampleInstances(sample):
   else:
     return None
 
+def getSavedImage(instance, sample):
+  return targetDir+sample+"/"+instance+"/processed.jpg"
+
 def getMetaData(instance, sample):
   directory = targetDir+sample+"/"+instance+"/data.json"
   if os.path.exists(directory):
@@ -49,11 +52,10 @@ def getMetaData(instance, sample):
 
 def readImage(instance, sample, system):
   directory = targetDir+sample+"/"+instance+"/processed.jpg" 
-  '''
   if os.path.exists(directory):
     return TFLightbox.readImage(directory, system)
   else:
-    return None'''
+    return None
 
 def uploadImage(instance, sample2):
   directory = targetDir+sample2+"/"+instance+"/"
