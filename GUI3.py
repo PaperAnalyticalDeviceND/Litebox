@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QPushButton, QLabel, QAction, QMenuBar, QActionGroup, QMenu, QDialog, QWidgetAction, QComboBox
 from PyQt5.QtCore import QTimer, QRectF, QPoint, QSize
-from PyQt5.QtGui import QColor, QPainter, QImage, QFont
+from PyQt5.QtGui import QColor, QPainter, QImage, QFont, QPixmap
 '''
 from PyQt5.QtWidgets import , QPushButton, QApplication, QLabel, QFrame, QComboBox, QLabel, QMainWindow, QAction, QActionGroup, QMenuBar
 from PyQt5.QtCore import QObject, Qt, pyqtSignal, QRectF, QPoint, QTimer, pyqtSlot
@@ -8,16 +8,67 @@ from PyQt5.QtGui import QPainter, QFont, QColor, QPen, QImage, QIcon'''
 import sys
 import ImageSource, ImageProcessing, FileHandler
 from CategoryGUI import Ui_Dialog as Form
+from PADReview import Ui_Form as uiForm
 import platform
 import numpy as np
+import threading, time
 
 border_size = 20.0
 default_test = '12LanePADKenya2015'
 default_category = 'General'
 default_sample = 'Amoxicillin'
 name = "PAD reader"
-version = 1.11
+version = 1.20
 nameAndVersion = "%s-v%.2f" % ( name, version )
+DEFAULTS = "PADTemp"
+
+class NNThread(threading.Thread):
+  def __init__(self, instance, sample, review, os, upload = False):
+    threading.Thread.__init__(self)
+    self.instance = instance
+    self.sample = sample
+    self.review = review
+    self.upload = upload
+    self.os = os
+
+  def run(self):
+    if self.upload:
+      self.runUpload()
+    else:
+      self.runNN()
+
+  def runUpload(self):
+    print("Starting Upload...")
+    status = 'Uploading... '
+    data = FileHandler.getMetaData(self.instance, self.sample)
+    data['uploaded'] = status
+    self.updateReview(status, self.review.pushButton_2)
+    FileHandler.uploadImage(self.instance, self.sample)
+    data = FileHandler.getMetaData(self.instance, self.sample)
+    status = data['uploaded']
+    self.updateReview(status, self.review.pushButton_2)
+
+  def runNN(self):
+    print("Starting NN...")
+    drug = 'Predicting... '
+    data = FileHandler.getMetaData(self.instance, self.sample)
+    data['sample_pred'] = drug
+    FileHandler.saveMetaData(data, instance=self.instance, sample=self.sample)
+    self.updateReview(drug, self.review.pushButton)
+    drug, percent = FileHandler.readImage(self.instance, self.sample, self.os)
+    data = FileHandler.getMetaData(self.instance, self.sample)
+    data['sample_pred'] = drug
+    FileHandler.saveMetaData(data, instance=self.instance, sample=self.sample)
+    self.updateReview(drug, self.review.pushButton)
+
+  def updateReview(self, text, button):
+    try:
+      sample = self.review.listWidget.currentItem().text()
+      instance = self.review.listWidget_2.currentItem().text()
+      if sample == self.sample and instance == self.instance:
+        button.setText(text)
+    except Exception as e:
+      pass
 
 def CenterWindow(widget, screenX, screenY, percent):
   width = percent*screenX
@@ -56,6 +107,14 @@ class ImageWidget(QWidget):
     qp.end()
 
 class ScanWidget(QMainWindow):
+  def runNN(self, parentMenu, instance, sample):
+    drug, percent = FileHandler.readImage(instance, sample, self.os)
+    data = FileHandler.getMetaData(instance, sample)
+    data['sample_pred'] = drug
+    FileHandler.saveMetaData(data, instance=instance, sample=sample)
+    parentMenu.clear()
+    self.buildMetaData(parentMenu, instance, sample)
+
   def __init__(self):
     super(QMainWindow, self).__init__()
     self.setDefaults()
@@ -98,14 +157,6 @@ class ScanWidget(QMainWindow):
       FileHandler.saveYeastWhiteImage(self.whiteImage, self.finalImage)
     self.restartCapture()
 
-  def runNN(self, parentMenu, instance, sample):
-    drug, percent = FileHandler.readImage(instance, sample, self.os)
-    data = FileHandler.getMetaData(instance, sample)
-    data['sample_pred'] = drug
-    FileHandler.saveMetaData(data, instance=instance, sample=sample)
-    parentMenu.clear()
-    self.buildMetaData(parentMenu, instance, sample)
-
   def setButtonVisibility(self, visibility):
     self.saveButton.setVisible(visibility)
     self.resetButton.setVisible(visibility)
@@ -125,13 +176,7 @@ class ScanWidget(QMainWindow):
     self.label.adjustSize()
     self.label.setVisible(False)
     self.drugBox = QComboBox(self)
-    available = FileHandler.getBriefData(defaults='PADTemp')
-    self.drugBox.addItems(available['samples'])
-    index = self.drugBox.findText(self.drug)
-    self.drugBox.setCurrentIndex(index)
-    self.drugBox.setFont(QFont("Arial", 20))
-    self.drugBox.move(350, 20)
-    self.drugBox.resize(300,40)
+    self.setupDrugBox()
     if self.yeast:
       self.takeButton = QPushButton("Take image", self)
       self.setupButton(self.takeButton, self.manualYeastImage, 400, 520)
@@ -139,22 +184,14 @@ class ScanWidget(QMainWindow):
     self.setUpMenu()
     self.show()
 
-  def unholyHack(self, action):
-    parentMenu = action.parentWidget()
-    grandParentMenu = parentMenu.parent()
-    instance = parentMenu.title()
-    sample = grandParentMenu.title()
-    if action.text() == 'No prediction':
-      #data = FileHandler.getMetaData(instance, sample)
-      #data['sample_pred'] = 'Processing...'
-      #FileHandler.saveMetaData(data, instance=instance, sample=sample)
-      self.runNN(parentMenu, instance, sample)
-    elif action.text() == 'Not Uploaded':
-      FileHandler.uploadImage(instance, sample)
-    parentMenu.clear()
-    self.buildMetaData(parentMenu, instance, sample)
-
-    #print(action.text(), parentMenu.title(), grandParentMenu.title())
+  def setupDrugBox(self):
+    available = FileHandler.getBriefData(defaults=DEFAULTS)
+    self.drugBox.addItems(available['samples'])
+    index = self.drugBox.findText(self.drug)
+    self.drugBox.setCurrentIndex(index)
+    self.drugBox.setFont(QFont("Arial", 20))
+    self.drugBox.move(350, 20)
+    self.drugBox.resize(300,40)
 
   def readDialog(self):
     self.drug = self.drugBox.currentText()
@@ -172,6 +209,15 @@ class ScanWidget(QMainWindow):
     dialog.exec_()
     dialog.show()
 
+  def openReview(self):
+    dialog = QDialog()
+    dialog.ui = uiForm()
+    dialog.ui.setupUi(dialog)
+    self.review = dialog.ui
+    self.setUpReview()
+    dialog.exec_()
+    dialog.show()
+
   def setUpDialog(self):
     available = FileHandler.getBriefData(defaults='Herbs')
     self.form.category_box.addItems(available['categories'])
@@ -181,6 +227,80 @@ class ScanWidget(QMainWindow):
     index = self.form.test_box.findText(self.test)
     self.form.test_box.setCurrentIndex(index)
 
+  def setUpReview(self):
+    self.populateSamples()
+    self.review.listWidget_2.currentItemChanged.connect(self.showSamples)
+    self.review.listWidget.currentItemChanged.connect(self.showPADs)
+    self.review.listWidget.setCurrentRow(0)
+
+  def showSamples(self, a, b):
+    if a is not None:
+      instance = a.text()
+      sample = self.review.listWidget.currentItem().text()
+      metadata = FileHandler.getMetaData(instance, sample)
+      imgPath = FileHandler.getSavedImage(instance, sample)
+      self.review.label.setPixmap(QPixmap(imgPath))
+      self.setButton(metadata, self.review.pushButton_4, 'sample_name')
+      self.setButton(metadata, self.review.pushButton_7, 'category_name')
+      self.setButton(metadata, self.review.pushButton_5, 'test_name')
+      self.setClickableButton(metadata, self.review.pushButton, 'sample_pred')
+      self.setClickableButton(metadata, self.review.pushButton_2, 'uploaded')
+
+  def predictDrug(self):
+    print("Getting prediction")
+    instance = self.review.listWidget_2.currentItem().text()
+    sample = self.review.listWidget.currentItem().text()
+    thread = NNThread(instance, sample, self.review, self.os, upload = False)
+    thread.start()
+
+  def uploadDrug(self):
+    print("Uploading")
+    instance = self.review.listWidget_2.currentItem().text()
+    sample = self.review.listWidget.currentItem().text()
+    thread = NNThread(instance, sample, self.review, upload = True)
+    thread.start()
+
+  def setClickableButton(self, data, button, target):
+    try: button.clicked.disconnect()
+    except Exception: pass
+    if target in data.keys():
+      if target == 'sample_pred':
+        button.setText(data[target])
+      elif target == 'uploaded':
+        if data[target]:
+          button.setText('Upload Successful!')
+        else:
+          button.setText('Upload')
+          button.clicked.connect(self.uploadDrug)
+    else:
+      if target == 'sample_pred':
+        button.setText('Predict')
+        button.clicked.connect(self.predictDrug)
+      elif target == 'uploaded':
+        button.setText('Upload')
+        button.clicked.connect(self.uploadDrug)
+
+  def setButton(self, data, button, target):
+    if target in data.keys():
+      button.setText(data[target])
+    else:
+      button.setText('Unknown')
+
+  def showPADs(self, a, b):
+    self.review.listWidget_2.clear()
+    sampleInstances = FileHandler.getSavedSampleInstances(a.text())
+    if sampleInstances is not None:
+      for instance in sampleInstances:
+        if instance != '.DS_Store':
+          self.review.listWidget_2.addItem(instance)
+    self.review.listWidget_2.setCurrentRow(0)
+
+  def populateSamples(self):
+    samples = FileHandler.getSavedSamples()
+    for sample in samples:
+      if sample != '.DS_Store':
+        self.review.listWidget.addItem(sample)
+
   def setUpMenu(self):
     mainmenu = self.menuBar()
     menu = mainmenu.addMenu('Set Defaults')
@@ -188,59 +308,10 @@ class ScanWidget(QMainWindow):
     act.triggered.connect(self.openDialog)
     menu.addAction(act)
     self.reviewMenu = mainmenu.addMenu('Review Samples')
-    self.setUpSubMenus(self.reviewMenu)
+    act = QAction('Review Samples', self.reviewMenu)
+    act.triggered.connect(self.openReview)
+    self.reviewMenu.addAction(act)
     mainmenu.adjustSize()
-
-  def setUpSubMenus(self, menu):
-    menu.clear()
-    samples = FileHandler.getSavedSamples()
-    for sample in samples:
-      sampleInstances = FileHandler.getSavedSampleInstances(sample)
-      if sampleInstances is not None:
-        sampleMenu = QMenu(sample, menu)
-        for instance in sampleInstances:
-          instanceMenu = QMenu(instance, sampleMenu)
-          self.buildMetaData(instanceMenu, instance, sample)
-          sampleMenu.addMenu(instanceMenu)
-        menu.addMenu(sampleMenu)
-
-  def buildMetaData(self, menu, instance, sample):
-    metadata = FileHandler.getMetaData(instance, sample)
-    if metadata is not None:
-      actionGroup = self.setUpMetaDataActions(menu, metadata)
-      actionGroup.triggered.connect(self.unholyHack)
-
-  def setUpMetaDataActions(self, menu, metadata):
-    actionGroup = QActionGroup(menu)
-    testName = 'Test not recorded'
-    drugName = 'Drug not recorded'
-    catName = 'Category not recorded'
-    predName = 'No prediction'
-    uploadName = 'Upload not recorded'
-    if 'test_name' in metadata.keys():
-      testName = 'Test = '+metadata['test_name']
-    if 'sample_name' in metadata.keys():
-      drugName = 'Drug = '+metadata['sample_name']
-    if 'category_name' in metadata.keys():
-      catName = 'Category = '+metadata['category_name']
-    if 'sample_pred' in metadata.keys():
-      predName = metadata['sample_pred']
-    if 'uploaded' in metadata.keys():
-      if metadata['uploaded'] is True:
-        uploadName = 'Uploaded'
-      else:
-        uploadName = 'Not Uploaded'
-    act = actionGroup.addAction(QAction(testName, menu))
-    menu.addAction(act)
-    act = actionGroup.addAction(QAction(drugName, menu))
-    menu.addAction(act)
-    act = actionGroup.addAction(QAction(catName, menu))
-    menu.addAction(act)
-    act = actionGroup.addAction(QAction(predName, menu))
-    menu.addAction(act)
-    act = actionGroup.addAction(QAction(uploadName, menu))
-    menu.addAction(act)
-    return actionGroup
 
   def setupButton(self, button, program, x, y):
     button.setFont(QFont("Arial", 20))
@@ -345,6 +416,72 @@ class ScanWidget(QMainWindow):
 
   def closeEvent(self, event):
     self.imageSource.stopCapture()
+
+  def unholyHack(self, action):
+    parentMenu = action.parentWidget()
+    grandParentMenu = parentMenu.parent()
+    instance = parentMenu.title()
+    sample = grandParentMenu.title()
+    if action.text() == 'No prediction':
+      #data = FileHandler.getMetaData(instance, sample)
+      #data['sample_pred'] = 'Processing...'
+      #FileHandler.saveMetaData(data, instance=instance, sample=sample)
+      self.runNN(parentMenu, instance, sample)
+    elif action.text() == 'Not Uploaded':
+      FileHandler.uploadImage(instance, sample)
+    parentMenu.clear()
+    self.buildMetaData(parentMenu, instance, sample)
+
+  def setUpMetaDataActions(self, menu, metadata):
+    actionGroup = QActionGroup(menu)
+    testName = 'Test not recorded'
+    drugName = 'Drug not recorded'
+    catName = 'Category not recorded'
+    predName = 'No prediction'
+    uploadName = 'Upload not recorded'
+    if 'test_name' in metadata.keys():
+      testName = 'Test = '+metadata['test_name']
+    if 'sample_name' in metadata.keys():
+      drugName = 'Drug = '+metadata['sample_name']
+    if 'category_name' in metadata.keys():
+      catName = 'Category = '+metadata['category_name']
+    if 'sample_pred' in metadata.keys():
+      predName = metadata['sample_pred']
+    if 'uploaded' in metadata.keys():
+      if metadata['uploaded'] is True:
+        uploadName = 'Uploaded'
+      else:
+        uploadName = 'Not Uploaded'
+    act = actionGroup.addAction(QAction(testName, menu))
+    menu.addAction(act)
+    act = actionGroup.addAction(QAction(drugName, menu))
+    menu.addAction(act)
+    act = actionGroup.addAction(QAction(catName, menu))
+    menu.addAction(act)
+    act = actionGroup.addAction(QAction(predName, menu))
+    menu.addAction(act)
+    act = actionGroup.addAction(QAction(uploadName, menu))
+    menu.addAction(act)
+    return actionGroup
+
+  def setUpSubMenus(self, menu):
+    menu.clear()
+    samples = FileHandler.getSavedSamples()
+    for sample in samples:
+      sampleInstances = FileHandler.getSavedSampleInstances(sample)
+      if sampleInstances is not None:
+        sampleMenu = QMenu(sample, menu)
+        for instance in sampleInstances:
+          instanceMenu = QMenu(instance, sampleMenu)
+          self.buildMetaData(instanceMenu, instance, sample)
+          sampleMenu.addMenu(instanceMenu)
+        menu.addMenu(sampleMenu)
+
+  def buildMetaData(self, menu, instance, sample):
+    metadata = FileHandler.getMetaData(instance, sample)
+    if metadata is not None:
+      actionGroup = self.setUpMetaDataActions(menu, metadata)
+      actionGroup.triggered.connect(self.unholyHack)
 
 if __name__ == '__main__':
   app = QApplication(sys.argv)
