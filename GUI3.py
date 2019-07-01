@@ -18,7 +18,7 @@ default_test = '12LanePADKenya2015'
 default_category = 'General'
 default_sample = 'Amoxicillin'
 name = "PAD reader"
-version = 1.20
+version = 1.21
 nameAndVersion = "%s-v%.2f" % ( name, version )
 DEFAULTS = "PADTemp"
 
@@ -150,7 +150,6 @@ class ScanWidget(QMainWindow):
     if not self.yeast:
       data = self.getData()
       self.prefix = FileHandler.savePADImage(self.rawImage, self.finalImage, data, self.qr)
-      self.setUpSubMenus(self.reviewMenu)
     if self.yeast and self.foundYeast:
       FileHandler.saveYeastImage(self.finalImage)
     elif self.yeast and self.manualFoundYeast:
@@ -421,21 +420,6 @@ class ScanWidget(QMainWindow):
   def closeEvent(self, event):
     self.imageSource.stopCapture()
 
-  def unholyHack(self, action):
-    parentMenu = action.parentWidget()
-    grandParentMenu = parentMenu.parent()
-    instance = parentMenu.title()
-    sample = grandParentMenu.title()
-    if action.text() == 'No prediction':
-      #data = FileHandler.getMetaData(instance, sample)
-      #data['sample_pred'] = 'Processing...'
-      #FileHandler.saveMetaData(data, instance=instance, sample=sample)
-      self.runNN(parentMenu, instance, sample)
-    elif action.text() == 'Not Uploaded':
-      FileHandler.uploadImage(instance, sample)
-    parentMenu.clear()
-    self.buildMetaData(parentMenu, instance, sample)
-
   def setUpMetaDataActions(self, menu, metadata):
     actionGroup = QActionGroup(menu)
     testName = 'Test not recorded'
@@ -480,12 +464,6 @@ class ScanWidget(QMainWindow):
           self.buildMetaData(instanceMenu, instance, sample)
           sampleMenu.addMenu(instanceMenu)
         menu.addMenu(sampleMenu)
-
-  def buildMetaData(self, menu, instance, sample):
-    metadata = FileHandler.getMetaData(instance, sample)
-    if metadata is not None:
-      actionGroup = self.setUpMetaDataActions(menu, metadata)
-      actionGroup.triggered.connect(self.unholyHack)
 
 if __name__ == '__main__':
   app = QApplication(sys.argv)
