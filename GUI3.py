@@ -18,7 +18,7 @@ default_test = '12LanePADKenya2015'
 default_category = 'General'
 default_sample = 'Amoxicillin'
 name = "PAD reader"
-version = 1.21
+version = 1.22
 nameAndVersion = "%s-v%.2f" % ( name, version )
 DEFAULTS = "PADTemp"
 
@@ -292,17 +292,22 @@ class ScanWidget(QMainWindow):
   def showPADs(self, a, b):
     self.review.listWidget_2.clear()
     sampleInstances = FileHandler.getSavedSampleInstances(a.text())
+    finalList = []
     if sampleInstances is not None:
       for instance in sampleInstances:
         if instance != '.DS_Store':
-          self.review.listWidget_2.addItem(instance)
+          finalList.append(instance)
+    self.review.listWidget_2.addItems(finalList)
     self.review.listWidget_2.setCurrentRow(0)
 
   def populateSamples(self):
     samples = FileHandler.getSavedSamples()
+    finalList = []
     for sample in samples:
       if sample != '.DS_Store':
-        self.review.listWidget.addItem(sample)
+        finalList.append(sample)
+    finalList.sort()
+    self.review.listWidget.addItems(finalList)
 
   def setUpMenu(self):
     mainmenu = self.menuBar()
