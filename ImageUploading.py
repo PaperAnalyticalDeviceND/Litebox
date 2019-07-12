@@ -59,11 +59,11 @@ def postData(file1, file2, sample, test, category, idnum):
     "category_name": category,
     "camera1": "RaspberryPi",
     "notes": "testing",
-    "file_name": "raw.png",
-    "file_name2": "processed.png",
+    "file_name2": "raw.png",
+    "file_name": "processed.png",
     "sampleid": idnum,
-    "uploaded_file": encodeData,
-    "uploaded_file2": encodeData2
+    "uploaded_file2": encodeData,
+    "uploaded_file": encodeData2
   }
   response = requests.post(url, values)
   ret = response.json()

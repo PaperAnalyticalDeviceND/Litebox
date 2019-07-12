@@ -18,7 +18,7 @@ default_test = '12LanePADKenya2015'
 default_category = 'General'
 default_sample = 'Amoxicillin'
 name = "PAD reader"
-version = 1.22
+version = 1.23
 nameAndVersion = "%s-v%.2f" % ( name, version )
 DEFAULTS = "PADTemp"
 
@@ -107,14 +107,6 @@ class ImageWidget(QWidget):
     qp.end()
 
 class ScanWidget(QMainWindow):
-  def runNN(self, parentMenu, instance, sample):
-    drug, percent = FileHandler.readImage(instance, sample, self.os)
-    data = FileHandler.getMetaData(instance, sample)
-    data['sample_pred'] = drug
-    FileHandler.saveMetaData(data, instance=instance, sample=sample)
-    parentMenu.clear()
-    self.buildMetaData(parentMenu, instance, sample)
-
   def __init__(self):
     super(QMainWindow, self).__init__()
     self.setDefaults()
@@ -249,18 +241,18 @@ class ScanWidget(QMainWindow):
     print("Getting prediction")
     print(threading.active_count())
     if threading.active_count() < 2:
-	instance = self.review.listWidget_2.currentItem().text()
-    	sample = self.review.listWidget.currentItem().text()
-    	thread = NNThread(instance, sample, self.review, self.os, upload = False)
-    	thread.start()
+      instance = self.review.listWidget_2.currentItem().text()
+      sample = self.review.listWidget.currentItem().text()
+      thread = NNThread(instance, sample, self.review, self.os, upload = False)
+      thread.start()
     else:
-	self.review.pushButton.setText('Processor Busy')
+      self.review.pushButton.setText('Processor Busy')
 
   def uploadDrug(self):
     print("Uploading")
     instance = self.review.listWidget_2.currentItem().text()
     sample = self.review.listWidget.currentItem().text()
-    thread = NNThread(instance, sample, self.review, upload = True)
+    thread = NNThread(instance, sample, self.review, self.os, upload = True)
     thread.start()
 
   def setClickableButton(self, data, button, target):
@@ -456,19 +448,6 @@ class ScanWidget(QMainWindow):
     act = actionGroup.addAction(QAction(uploadName, menu))
     menu.addAction(act)
     return actionGroup
-
-  def setUpSubMenus(self, menu):
-    menu.clear()
-    samples = FileHandler.getSavedSamples()
-    for sample in samples:
-      sampleInstances = FileHandler.getSavedSampleInstances(sample)
-      if sampleInstances is not None:
-        sampleMenu = QMenu(sample, menu)
-        for instance in sampleInstances:
-          instanceMenu = QMenu(instance, sampleMenu)
-          self.buildMetaData(instanceMenu, instance, sample)
-          sampleMenu.addMenu(instanceMenu)
-        menu.addMenu(sampleMenu)
 
 if __name__ == '__main__':
   app = QApplication(sys.argv)
