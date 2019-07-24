@@ -18,7 +18,7 @@ default_test = '12LanePADKenya2015'
 default_category = 'General'
 default_sample = 'Amoxicillin'
 name = "PAD reader"
-version = 1.23
+version = 1.24
 nameAndVersion = "%s-v%.2f" % ( name, version )
 DEFAULTS = "PADTemp"
 
@@ -47,6 +47,7 @@ class NNThread(threading.Thread):
     data = FileHandler.getMetaData(self.instance, self.sample)
     status = data['uploaded']
     self.updateReview(status, self.review.pushButton_2)
+    print("Done with upload")
 
   def runNN(self):
     print("Starting NN...")
@@ -119,7 +120,7 @@ class ScanWidget(QMainWindow):
     self.yeast = False
     self.os = platform.system()
     self.oldFiducials = []
-    self.binFrames = 0
+    self.binFrames = 10
     self.foundYeast = False
     self.manualFoundYeast = False
     self.prefix = ""

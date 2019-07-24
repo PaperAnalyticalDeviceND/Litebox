@@ -38,6 +38,7 @@ class imageSource():
   def stopCapture(self):
     self.running = False
     self.controlLED(black)
+    self.picQueue = Queue.Queue()
 
   def testGrab(self, cam, width, height, fps):
     while self.running:
