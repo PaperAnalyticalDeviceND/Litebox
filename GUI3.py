@@ -18,7 +18,7 @@ default_test = '12LanePADKenya2015'
 default_category = 'General'
 default_sample = 'Alum (Granules)'
 name = "Herb Scanner"
-version = 1.20
+version = 1.21
 nameAndVersion = "%s-v%.2f" % ( name, version )
 DEFAULTS = "Herbs"
 
@@ -119,7 +119,7 @@ class ScanWidget(QMainWindow):
     self.yeast = False
     self.os = platform.system()
     self.oldFiducials = []
-    self.binFrames = 0
+    self.binFrames = 10
     self.foundYeast = False
     self.manualFoundYeast = False
     self.prefix = ""
