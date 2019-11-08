@@ -182,7 +182,7 @@ class ScanWidget(QMainWindow):
     index = self.drugBox.findText(self.drug)
     self.drugBox.setCurrentIndex(index)
     self.drugBox.setFont(QFont("Arial", 20))
-    self.drugBox.move(350, 20)
+    self.drugBox.move(350, 40)
     self.drugBox.resize(300,40)
 
   def readDialog(self):
