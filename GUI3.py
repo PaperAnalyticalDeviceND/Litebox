@@ -120,7 +120,7 @@ class ScanWidget(QMainWindow):
     self.yeast = False
     self.os = platform.system()
     self.oldFiducials = []
-    self.binFrames = 10
+    self.binFrames = 5
     self.foundYeast = False
     self.manualFoundYeast = False
     self.prefix = ""
@@ -158,12 +158,12 @@ class ScanWidget(QMainWindow):
     self.setWindowTitle(nameAndVersion)
     self.IWidget =  ImageWidget(self)
     self.saveButton = QPushButton("Save image", self)
-    self.setupButton(self.saveButton, self.saveImage, 10, 20)
+    self.setupButton(self.saveButton, self.saveImage, 10, 40)
     self.resetButton = QPushButton("Discard image", self)
-    self.setupButton(self.resetButton, self.restartCapture, 760, 20)
+    self.setupButton(self.resetButton, self.restartCapture, 760, 40)
     self.label = QLabel("Image saved!", self)
     self.label.setFont(QFont("Arial", 20))
-    self.label.move(375, 20)
+    self.label.move(375, 40)
     self.label.setStyleSheet("QLabel { color: white; }")
     self.label.adjustSize()
     self.label.setVisible(False)
