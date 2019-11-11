@@ -415,7 +415,7 @@ class ScanWidget(QMainWindow):
     self.imageSource.startCapture(green)
 
   def closeEvent(self, event):
-    self.imageSource.stopCapture()
+    self.imageSource.killCapture()
 
   def setUpMetaDataActions(self, menu, metadata):
     actionGroup = QActionGroup(menu)
