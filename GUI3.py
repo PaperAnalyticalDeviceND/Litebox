@@ -110,6 +110,7 @@ class ImageWidget(QWidget):
 class ScanWidget(QMainWindow):
   def __init__(self):
     super(QMainWindow, self).__init__()
+    self.binFrames = 5
     self.setDefaults()
     self.initVars()
     self.initUI()
@@ -120,7 +121,6 @@ class ScanWidget(QMainWindow):
     self.yeast = False
     self.os = platform.system()
     self.oldFiducials = []
-    self.binFrames = 5
     self.foundYeast = False
     self.manualFoundYeast = False
     self.prefix = ""
@@ -412,7 +412,6 @@ class ScanWidget(QMainWindow):
     self.setButtonVisibility(False)
     if reset:
       self.initVars()
-      self.binFrames += 2
     self.imageSource.startCapture(green)
 
   def closeEvent(self, event):
