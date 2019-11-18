@@ -12,6 +12,8 @@ laneYEnd = 1095
 
 dst_points_old = [[85, 1163], [686, 1163], [686, 77], [82, 64], [82, 226], [244, 64]]
 dst_points_new = [[85, 1163], [686, 1163], [686, 77], [82, 64], [82, 237], [255, 64]]
+old_checks = [[82,226,1],[244,64,1]]
+new_checks = [[82,237,1],[255,64,1]]
 
 def userProcessImage(img, oldFiducials):
   processed = drawWork(img, oldFiducials)
@@ -200,27 +202,27 @@ def drawWork(img, fiducials):
   return processed
 
 def rectifyImage(img, fiducials):
-  output, passed = singleRectifyAttempt(img, fiducials, dst_points_new)
+  output, passed = singleRectifyAttempt(img, fiducials, dst_points_new, new_checks)
   if not passed:
-    output, passed = singleRectifyAttempt(img, fiducials, dst_points_old)
+    output, passed = singleRectifyAttempt(img, fiducials, dst_points_old, old_checks)
   return output, passed
 
-def singleRectifyAttempt(img, fiducials, points):
+def singleRectifyAttempt(img, fiducials, points, checks):
   src_points = fiducials
   dst_points = points
   srcpoints = np.array(src_points[:4], np.float32)
   dstpoints = np.array(dst_points[:4], np.float32)
   transformation = cv2.getPerspectiveTransform(srcpoints, dstpoints)
   output = cv2.warpPerspective(img, transformation, (730, 1220),borderMode=cv2.BORDER_REPLICATE)
-  error = getError(fiducials, transformation)
+  error = getError(fiducials, transformation, checks)
   print("error = "+ str(error))
   return output, error < 20
 
-def getError(fiducials, transformation):
+def getError(fiducials, transformation, checks):
   error = 0
   for i in range(2):
     if fiducials[4+i][0]>0:
-      check, trueChecks = getCheck(fiducials, transformation, 4+i)
+      check, trueChecks = getCheck(fiducials, transformation, 4+i, checks)
       for j in range(1):
         dist = check[:, j]-trueChecks[i]
         dist = dist**2
@@ -228,12 +230,12 @@ def getError(fiducials, transformation):
         error += np.sum(dist)
   return error
 
-def getCheck(fiducials, transformation, checkID = 4):
+def getCheck(fiducials, transformation, checkID = 4, checks):
   check = np.ones((2,3), dtype='float32')
   check[0,:2] = fiducials[checkID]
   check = np.transpose(check)
   transformedCheck = np.matmul(transformation, check)
-  trueChecks = np.array([[82,226,1],[244,64,1]], np.float32)
+  trueChecks = np.array(checks, np.float32)
   for i in range(2):
     transformedCheck[:,i] = transformedCheck[:,i]/transformedCheck[2,i]
   return transformedCheck, trueChecks
