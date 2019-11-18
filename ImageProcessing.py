@@ -205,7 +205,6 @@ def rectifyImage(img, fiducials):
     output, passed = singleRectifyAttempt(img, fiducials, dst_points_old)
   return output, passed
 
-
 def singleRectifyAttempt(img, fiducials, points):
   src_points = fiducials
   dst_points = points
@@ -243,7 +242,7 @@ def getQR(img):
   img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
   scanner = zbar.Scanner()
   result = scanner.scan(img)
-  print(result)s
+  print(result)
   if len(result) > 0:
     code = result[0].data
     code = code.replace("padproject.nd.edu/?s=", "")
