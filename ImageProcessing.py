@@ -206,7 +206,7 @@ def rectifyImage(img, fiducials):
   return output, passed
 
 
-def singleRectifyAttempt(img, fiducials, points)
+def singleRectifyAttempt(img, fiducials, points):
   src_points = fiducials
   dst_points = points
   srcpoints = np.array(src_points[:4], np.float32)
