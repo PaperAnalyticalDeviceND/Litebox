@@ -16,11 +16,11 @@ import threading, time
 border_size = 20.0
 default_test = '12LanePADKenya2015'
 default_category = 'General'
-default_sample = 'Amoxicillin'
-name = "PAD reader"
+default_sample = 'Cisplatin'
+name = "ChemoPAD reader"
 version = 1.24
 nameAndVersion = "%s-v%.2f" % ( name, version )
-DEFAULTS = "PADTemp"
+DEFAULTS = "ChemoPAD"
 
 class NNThread(threading.Thread):
   def __init__(self, instance, sample, review, os, upload = False):
