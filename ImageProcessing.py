@@ -10,6 +10,9 @@ laneWidth = 53
 laneYStart = 359
 laneYEnd = 1095
 
+dst_points_old = [[85, 1163], [686, 1163], [686, 77], [82, 64], [82, 226], [244, 64]]
+dst_points_new = [[85, 1163], [686, 1163], [686, 77], [82, 64], [82, 237], [255, 64]]
+
 def userProcessImage(img, oldFiducials):
   processed = drawWork(img, oldFiducials)
   return processed, oldFiducials
@@ -197,8 +200,15 @@ def drawWork(img, fiducials):
   return processed
 
 def rectifyImage(img, fiducials):
+  output, passed = singleRectifyAttempt(img, fiducials, dst_points_new)
+  if not passed:
+    output, passed = singleRectifyAttempt(img, fiducials, dst_points_old)
+  return output, passed
+
+
+def singleRectifyAttempt(img, fiducials, points)
   src_points = fiducials
-  dst_points = [[85, 1163], [686, 1163], [686, 77], [82, 64], [82, 226], [244, 64]]
+  dst_points = points
   srcpoints = np.array(src_points[:4], np.float32)
   dstpoints = np.array(dst_points[:4], np.float32)
   transformation = cv2.getPerspectiveTransform(srcpoints, dstpoints)
@@ -233,10 +243,11 @@ def getQR(img):
   img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
   scanner = zbar.Scanner()
   result = scanner.scan(img)
-  print(result)
+  print(result)s
   if len(result) > 0:
     code = result[0].data
     code = code.replace("padproject.nd.edu/?s=", "")
+    code = code.replace("padproject.nd.edu/?t=", "")
     return code
   return "Unknown"
 
