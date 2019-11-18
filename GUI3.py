@@ -329,12 +329,6 @@ class ScanWidget(QMainWindow):
     self.timer.timeout.connect(self.updateFrame)
     self.timer.start(1)
 
-  def mousePressEvent(self, QMouseEvent):
-    userPoint = [QMouseEvent.pos().x(), QMouseEvent.pos().y(), 13, -1]
-    posFiducials = self.oldFiducials[:]
-    posFiducials.append(userPoint)
-    self.oldFiducials = ImageProcessing.sortFiducials(posFiducials, self.oldFiducials)
-
   def manualYeastImage(self):
     self.imageSource.stopCapture()
     if not self.manualFoundYeast:
