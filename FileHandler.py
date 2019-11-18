@@ -23,7 +23,7 @@ def getBriefData(defaults='PAD'):
     samplesTemp = ['Amoxicillin', 'Amoxicillin clavulonic acid', 'Ampicillin', 'Azithromycin', 'Benzyl Penicillin', 'Ceftriaxone', 'Chloroquine', 'Ciprofloxacin', 'Corn Starch', 'DI water', 'Doxycycline', 'Enalapril', 'Isoniazid', 'Losartan', 'Metformin', 'Paracetamol', 'Penicillin Procaine',  'Quinine', 'Tap water', 'Unknown']
     return {'tests':tests, 'samples':samplesTemp, 'categories':categories}
   elif defaults == 'ChemoPAD':
-    chemoDrugs ['Doxorubicin', 'Cisplatin', 'Oxaliplatin', 'Methotrexate']
+    chemoDrugs = ['Doxorubicin', 'Cisplatin', 'Oxaliplatin', 'Methotrexate']
     return {'tests':tests, 'samples':chemoDrugs, 'categories':categories}
 
 def getData(defaults='PAD'):
