@@ -27,7 +27,7 @@ class imageSource():
       subprocess.call(command+color, shell=True)
 
   def startCapture(self, g=False):
-    self.capture_thread = threading.Thread(target=self.grab, args = (0, 1296, 976, 2, g))
+    self.capture_thread = threading.Thread(target=self.grab, args = (0, 1296, 976, 10, g))
     self.capture_thread.start()
     self.running = True
     if g:
