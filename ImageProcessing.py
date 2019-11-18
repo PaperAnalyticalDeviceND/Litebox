@@ -230,7 +230,7 @@ def getError(fiducials, transformation, checks):
         error += np.sum(dist)
   return error
 
-def getCheck(fiducials, transformation, checkID = 4, checks):
+def getCheck(fiducials, transformation, checkID = 4, checks = old_checks):
   check = np.ones((2,3), dtype='float32')
   check[0,:2] = fiducials[checkID]
   check = np.transpose(check)
