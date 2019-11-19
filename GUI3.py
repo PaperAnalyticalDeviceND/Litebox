@@ -14,8 +14,8 @@ import numpy as np
 import threading, time
 
 border_size = 20.0
-default_test = '12LanePADKenya2015'
-default_category = 'General'
+default_test = 'chemoPAD'
+default_category = 'Chemo Drugs'
 default_sample = 'Cisplatin'
 name = "ChemoPAD reader"
 version = 1.24
