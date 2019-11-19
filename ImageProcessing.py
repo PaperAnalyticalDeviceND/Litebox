@@ -254,8 +254,8 @@ def getQR(img):
 
 def findWax(img):
   img2 = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-  #template = cv2.imread("/home/pi/Documents/Template2.png", 0)
-  template = cv2.imread("Template2.png", 0)
+  template = cv2.imread("/home/pi/Documents/Template2.png", 0)
+  #template = cv2.imread("Template2.png", 0)
   match = cv2.matchTemplate(img2, template, cv2.TM_CCOEFF_NORMED)
   cv2.normalize(match, match, 0, 255, cv2.NORM_MINMAX)
   #cv2.imwrite("./prematch.png", img2)
