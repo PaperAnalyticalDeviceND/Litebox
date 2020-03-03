@@ -10,9 +10,6 @@ laneWidth = 53
 laneYStart = 359
 laneYEnd = 1095
 
-dst_points_old = [[85, 1163], [686, 1163], [686, 77], [82, 64], [82, 226], [244, 64]]
-dst_points_new = [[85, 1163], [686, 1163], [686, 77], [82, 64], [82, 237], [255, 64]]
-
 def userProcessImage(img, oldFiducials):
   processed = drawWork(img, oldFiducials)
   return processed, oldFiducials
@@ -27,19 +24,8 @@ def FindContours(img):
   blurred = cv2.blur(img, (2,2))
   edges = cv2.Canny(blurred, 40, 150)
   img2, contours, hierarchy = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-  img2 = cv2.cvtColor(img2, cv2.COLOR_GRAY2RGB)
-  #img, fiducials = findFiducials(contours, hierarchy, img2)
-  #return img, fiducials
   fiducials = findFiducials(contours, hierarchy)
   return img, fiducials
-
-def compareFiducials(fiducials, oldFiducials):
-  newFiducials = []
-  if len(fiducials) < len(oldFiducials):
-    newFiducials = oldFiducials
-  else:
-    newFiducials = fiducials
-  return newFiducials
 
 def sortFiducials(fiducials, oldFiducials):
   quadrants = [[],[],[],[]]
@@ -68,7 +54,8 @@ def sortFiducials(fiducials, oldFiducials):
     else:
       print("Failed")
       fiducials = []
-  fiducials = compareFiducials(fiducials, oldFiducials)
+  if len(fiducials) < len(oldFiducials):
+    fiducials = oldFiducials
   return fiducials
 
 def assign(point, centerX, centerY, quadrants):
@@ -160,7 +147,6 @@ def findFiducials(contours, hierarchy):
   fiducials = []
   Markers = selectMarkers(contours, hierarchy)
   for mark in Markers:
-    #cv2.drawContours(img, contours, mark, (0,255,0), 1)
     x, y, w, h = cv2.boundingRect(contours[mark])
     x = x+int(w/2)
     y = y+int(h/2)
@@ -169,8 +155,7 @@ def findFiducials(contours, hierarchy):
         break
     else:
       diameter = min(w,h)
-      sqrtArea = cv2.contourArea(contours[mark])**.5
-      if diameter > minDiameter and sqrtArea > (.85 * diameter):
+      if diameter > minDiameter:
         fiducials.append([x, y, diameter, -1])
   return fiducials
 
@@ -184,8 +169,7 @@ def selectMarkers(contours, hierarchy):
       depth += 1
     if hierarchy[0][contour][2] != -1:
       depth += 1
-    if depth >= 3:
-    #if depth >= 5:
+    if depth >= 5:
       Markers.append(contour)
   return Markers
 
@@ -200,14 +184,8 @@ def drawWork(img, fiducials):
   return processed
 
 def rectifyImage(img, fiducials):
-  output, passed = singleRectifyAttempt(img, fiducials, dst_points_new)
-  if not passed:
-    output, passed = singleRectifyAttempt(img, fiducials, dst_points_old)
-  return output, passed
-
-def singleRectifyAttempt(img, fiducials, points):
   src_points = fiducials
-  dst_points = points
+  dst_points = [[85, 1163], [686, 1163], [686, 77], [82, 64], [82, 226], [244, 64]]
   srcpoints = np.array(src_points[:4], np.float32)
   dstpoints = np.array(dst_points[:4], np.float32)
   transformation = cv2.getPerspectiveTransform(srcpoints, dstpoints)
@@ -221,6 +199,7 @@ def getError(fiducials, transformation):
   for i in range(2):
     if fiducials[4+i][0]>0:
       check, trueChecks = getCheck(fiducials, transformation, 4+i)
+      print(check.shape, trueChecks.shape)
       for j in range(1):
         dist = check[:, j]-trueChecks[i]
         dist = dist**2
@@ -246,28 +225,25 @@ def getQR(img):
   if len(result) > 0:
     code = result[0].data
     code = code.replace("padproject.nd.edu/?s=", "")
-    code = code.replace("padproject.nd.edu/?t=", "")
     return code
   return "Unknown"
 
 def findWax(img):
   img2 = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-  #template = cv2.imread("/home/pi/Documents/Template2.png", 0)
-  template = cv2.imread("Template2.png", 0)
+  template = cv2.imread("/home/pi/Documents/template.png", 0)
+  #template = cv2.imread("template.png", 0)
   match = cv2.matchTemplate(img2, template, cv2.TM_CCOEFF_NORMED)
   cv2.normalize(match, match, 0, 255, cv2.NORM_MINMAX)
-  #cv2.imwrite("./prematch.png", img2)
-  #cv2.imwrite("./match.png", match)
+  cv2.imwrite("./match.png", match)
   allowedPositions = np.ones((match.shape[0], match.shape[1]), dtype=np.uint8)
-  maxConfidence = 255
-  threshold = 200
+  maxConfidence = 1
+  threshold = .7
   wax = []
   while(len(wax) < 2 and maxConfidence > threshold):
     _, maxConfidence, _, (a, b) = cv2.minMaxLoc(match, mask = allowedPositions)
     centerX = a + (template.shape[0]/2)
     centerY = b + (template.shape[1]/2)
     wax.append((centerX, centerY))
-    print("Found wax,", centerX, centerY, maxConfidence)
     try:
       allowedPositions[(b-template.shape[1]/2):(b+template.shape[1]/2),(a-template.shape[0]/2):(a+template.shape[0]/2)] = 0
     except Exception as e:
@@ -288,9 +264,9 @@ def correctComb(img, finX, finY, wax=None):
   transformation = cv2.getPerspectiveTransform(srcpoints, dstpoints)
   output = cv2.warpPerspective(img, transformation, (730, 1220),borderMode=cv2.BORDER_REPLICATE)
   drawLines(output, topWax, botWax)
-  resized = cv2.rotate(output, cv2.ROTATE_90_CLOCKWISE)
-  resized = cv2.resize(resized, (finX, finY))
-  return output, resized, True
+  output = cv2.rotate(output, cv2.ROTATE_90_CLOCKWISE)
+  output = cv2.resize(output, (finX, finY))
+  return output, True
 
 def drawLines(output, topWax, botWax):
   for i in range(13):
@@ -313,8 +289,8 @@ def getCorners(point):
   return [(point[0]-(lanesWidth/2), point[1]), (point[0]+(lanesWidth/2), point[1])]
 
 if __name__ == '__main__':
-  raw = cv2.imread('./raw.jpg', 1)
-  processed, resized = ProcessImage(raw)
+  processed = cv2.imread('./processed.jpg', 1)
+  processed = correctComb(processed)
   cv2.imshow('Corrected', processed)
   cv2.waitKey(0)
   cv2.destroyAllWindows()

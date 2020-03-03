@@ -27,20 +27,18 @@ class imageSource():
       subprocess.call(command+color, shell=True)
 
   def startCapture(self, g=False):
-    self.capture_thread = threading.Thread(target=self.grab, args = (0, 1296, 976, 10, g))
+    self.capture_thread = threading.Thread(target=self.grab, args = (0, 1296, 976, 15, g))  # this  is where fps can be modified.  (0,1296,976,fps,g)
     self.capture_thread.start()
     self.running = True
     if g:
       self.controlLED(green)
     else:
       self.controlLED(white)
-      
-  def killCapture(self):
-    self.stopCapture()
-    self.controlLED(black)
+    print("Started Capture")
 
   def stopCapture(self):
     self.running = False
+    self.controlLED(black)
     self.picQueue = Queue.Queue()
 
   def testGrab(self, cam, width, height, fps):
@@ -76,9 +74,10 @@ class imageSource():
     if g:
       print("Adjusting camera for fluorescence")
       camera.exposure_mode = 'fireworks'
-      camera.awb_mode = 'sunlight'
-      camera.iso = 400
-      camera.shutter_speed = 500000
+      camera.awb_mode = 'off'
+      camera.awb_gains = [1.0,1.0]
+      camera.iso = 400 #Change ISO here 
+      camera.shutter_speed = 500160 #change the camera shutter speed here; units are micro-seconds (usec)
       camera.meter_mode = 'average'
     rawCapture = PiRGBArray(camera, size=(width, height))
     for f in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
@@ -120,3 +119,30 @@ class imageSource():
     frame = self.picQueue.get()
     img = frame['img']
     return self.rescaleToWindow(img)
+
+'''
+if __name__ == '__main__':
+  import platform
+  import numpy as np
+  imageSource1 = imageSource(platform.system(), False, True)
+  imageSource1.setSize(800, 400)
+  tests = [64000, 60000, 80000, 90000]
+  imgs = []
+  for shutterSpeed in tests:
+    imageSource1.startCapture(True, shutterSpeed)
+    cImg = []
+    while len(cImg) < 13:
+      cImg.append(imageSource1.getImage())
+    imgs.append(cImg)
+    imageSource1.stopCapture()
+  for box in imgs:
+    print("n")
+    v = []
+    for img in box[10:]:
+      #cv2.imshow("a", img)
+      #cv2.waitKey()
+      #print(np.amax(np.amax(img)))
+      v.append(np.mean(img[100:150,100:150,:]))
+    print(v)
+    print(np.max(v), np.min(v), np.mean(v), np.var(v))
+  print("done")'''
